@@ -10,9 +10,9 @@ import com.example.aviatickets.adapter.OfferListAdapter
 import com.example.aviatickets.databinding.FragmentOfferListBinding
 import com.example.aviatickets.model.service.FakeService
 
-
 class OfferListFragment : Fragment() {
 
+    var offers: List<Offer> = emptyList()
     companion object {
         fun newInstance() = OfferListFragment()
     }
@@ -37,7 +37,24 @@ class OfferListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupUI()
-        adapter.setItems(FakeService.offerList)
+        ApiClient.apiService.getFlights().enqueue(object : retrofit2.Callback<List<Offer>> {
+            override fun onResponse(call: Call<List<Offer>>, response: Response<List<Offer>>) {
+                if (response.isSuccessful) {
+                    offers = response.body() ?: emptyList()
+                    adapter.submitList(offers)
+
+                } else {
+
+                    print("something wrong")
+
+                }
+            }
+
+            override fun onFailure(call: Call<List<Offer>>, t: Throwable) {
+                println(t)
+            }
+        })
+
     }
 
     private fun setupUI() {
@@ -47,15 +64,12 @@ class OfferListFragment : Fragment() {
             sortRadioGroup.setOnCheckedChangeListener { _, checkedId ->
                 when (checkedId) {
                     R.id.sort_by_price -> {
-                        /**
-                         * implement sorting by price
-                         */
+                        val sortedByPrice = offers.sortedBy { it.price }
+                        adapter.submitList(sortedByPrice.toList())
                     }
-
                     R.id.sort_by_duration -> {
-                        /**
-                         * implement sorting by duration
-                         */
+                        val sortedByDuration = offers.sortedBy { it.flight.duration }
+                        adapter.submitList(sortedByDuration.toList())
                     }
                 }
             }
